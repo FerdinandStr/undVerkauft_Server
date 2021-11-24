@@ -30,31 +30,11 @@ router.delete("/:userId", (req, res, next) => {
 
 //*patch user
 //patch like put but for single elements (put "always" update/overwrite whole element)
+//req.body will replace whatever is inside (only elements in model are possible)
 router.patch("/:userId", (req, res, next) => {
-    User.updateOne({ _id: req.params.userId }, { $set: { email: req.body.email } }) //how to validate?
+    User.updateOne({ _id: req.params.userId }, { $set: req.body })
         .then((result) => res.json(result))
         .catch(next)
 })
 
-//*create new User
-router.post("/", (req, res, next) => {
-    const { username, email, password, passwordConfirm } = req.body
-    const user = new User({ username, email, password, passwordConfirm })
-
-    user.save()
-        .then((x) => {
-            console.log("SAVED!", x)
-            return res.json(x)
-        })
-        .catch(next)
-})
-
-router.put("/:userId", (req, res) => {
-    return res.send(`PUT HTTP method on user/${req.params.userId} resource`)
-})
-
-router.delete("/:userId", (req, res) => {
-    return res.send(`DELETE HTTP method on user/${req.params.userId} resource`)
-})
-
-export { router }
+export default router

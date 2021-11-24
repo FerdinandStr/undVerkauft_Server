@@ -9,7 +9,10 @@ const ItemSchema = new mongoose.Schema(
         picList: { type: String },
         detailList: { type: Object },
         creationUser: { type: mongoose.Schema.ObjectId, ref: User, required: true, index: true },
-        offer: OfferSchema,
+        offer: {
+            type: OfferSchema,
+            // default: {},
+        },
     },
     { timestamps: true }
 )

@@ -1,25 +1,32 @@
 import "dotenv/config"
 import theSecret from "./userPass.js"
-import cors from "cors"
+// import cors from "cors"
+import cookieParser from "cookie-parser"
 import express from "express"
-import models, { dbConnection } from "./models/index"
-import { router as userRouter } from "./routes/userRoutes"
+import { dbConnection } from "./models/index"
+import userRouter from "./routes/userRoutes"
+import authRouter from "./routes/authRoutes"
+import itemRouter from "./routes/itemRoutes"
+import offerRouter from "./routes/offerRoutes"
 import errorController from "./middleware/errorController"
+import { checkToken } from "./middleware/auth"
 
 const { port, DATABASE_URL } = process.env
 const eraseDatabaseOnSync = true
 
 const server = express()
 //Middlewares
-server.use(express.json())
-server.use("/users", userRouter)
 // server.use(cors())
+server.use(express.json())
+server.use(cookieParser())
 
-server.get("/port", (req, res) => {
-    res.send(port)
-})
-
+server.use("/users", authRouter)
+server.use(checkToken)
+server.use("/users", userRouter)
+server.use("/items", itemRouter)
+server.use("/items", offerRouter)
 server.use(errorController)
+
 dbConnection()
     .then(() => {
         console.log("Database connected on", DATABASE_URL)
@@ -36,9 +43,6 @@ dbConnection()
         //     console.log("test server listening on ", port, "connected with db", DATABASE_URL)
         // })
     })
-    // .then((res) => {
-    //     console.log("info", res)
-    // })
     .catch((res) => {
         console.error("ERROR", res)
     })

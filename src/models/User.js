@@ -32,7 +32,7 @@ const UserSchema = new mongoose.Schema(
                 message: "Passwords don't match.",
             },
         },
-        ip: { type: String },
+        ip: String,
     },
     { timestamps: true }
 )
@@ -44,17 +44,11 @@ UserSchema.pre("save", async function (next) {
     next()
 })
 
-// userSchema.statics.findByLogin = async function (login) {
-//     let user = await this.findOne({
-//         username: login,
-//     })
-
-//     if (!user) {
-//         user = await this.findOne({ email: login })
-//     }
-
-//     return user
-// }
+//find by username or email
+UserSchema.statics.findByLogin = async function (login) {
+    let user = await this.findOne({ $or: [{ username: login }, { email: login }] })
+    return user
+}
 
 // userSchema.pre("remove", function (next) {
 //     this.model("Message").deleteMany({ user: this._id }, next)
