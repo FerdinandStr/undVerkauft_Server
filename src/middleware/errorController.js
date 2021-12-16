@@ -10,7 +10,7 @@ function errorController(err, req, res, next) {
     }
     tryHandleUnknown(err, res)
 
-    return res.status(500).send("ERROCONTROLLER LAST RESORT 500")
+    return res.status(500).send({ error: "ERROCONTROLLER LAST RESORT 500" })
 }
 
 function handleDuplicateKeyError(err, res) {
@@ -18,7 +18,7 @@ function handleDuplicateKeyError(err, res) {
     const field = Object.keys(err.keyValue)
     const message = `An account with that ${field} already exists.`
     console.log({ messages: message, fields: field })
-    res.status(errCode).send({ messages: message, fields: field })
+    res.status(errCode).send({ error: "Duplicate Key Error: " + message, messages: [message], fields: [field] })
 }
 
 function handleValidationError(err, res) {
@@ -26,7 +26,7 @@ function handleValidationError(err, res) {
     const messages = Object.values(err.errors).map((el) => el.message)
     const fields = Object.values(err.errors).map((el) => el.path)
     console.log({ messages: messages, fields })
-    res.status(code).send({ messages: messages, fields })
+    return res.status(code).send({ error: "Validation Error", messages: messages, fields: fields })
 }
 
 function tryHandleUnknown(err, res) {

@@ -10,7 +10,7 @@ router.get("/", (req, res) => {
             return res.json(result)
         })
         .catch((error) => {
-            return res.json({ message: error })
+            return res.json(next)
         })
 })
 //*ind user by ID

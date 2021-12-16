@@ -1,6 +1,5 @@
 import "dotenv/config"
-import theSecret from "./userPass.js"
-// import cors from "cors"
+import cors from "cors"
 import cookieParser from "cookie-parser"
 import express from "express"
 import { dbConnection } from "./models/index"
@@ -16,7 +15,7 @@ const eraseDatabaseOnSync = true
 
 const server = express()
 //Middlewares
-// server.use(cors())
+server.use(cors({ allowedHeaders: "Content-Type", credentials: true, origin: true }))
 server.use(express.json())
 server.use(cookieParser())
 

@@ -1,5 +1,6 @@
 import { Router } from "express"
 import Item from "../models/Item"
+import { Offer } from "../models/Offer"
 const router = Router()
 
 // create bid for offer (keep item unchanged!)
@@ -43,9 +44,18 @@ router.get("/:itemId/offer", (req, res, next) => {
 })
 
 //create new Offer for Item
+router.post("/:itemId/offer", (req, res, next) => {
+    // const offer = new Offer({ startDate: req.body.startDate, endDate: req.body.endDate, askPrice: req.body.askPrice })
+    const offer = new Offer(req.body)
+    Item.updateOne({ _id: req.params.itemId }, { $set: { offer: offer } })
+        .then((result) => res.json(result))
+        .catch(next)
+})
+
+//create new Offer for Item
 //update offer and keep item unchanged!
 router.patch("/:itemId/offer", (req, res, next) => {
-    Item.updateOne({ _id: req.params.itemId }, { $set: { offer: req.body } }) //holy shit
+    Item.updateOne({ _id: req.params.itemId }, { $set: { offer: req.body } }) //holy shit :O
         .then((result) => res.json(result))
         .catch(next)
 })

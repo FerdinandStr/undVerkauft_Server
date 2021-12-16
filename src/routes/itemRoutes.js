@@ -4,9 +4,19 @@ import Item from "../models/Item"
 //* Path in main is /items
 const router = Router()
 
-//*get all Items
+//*get all Items or by SearchParam
 router.get("/", (req, res, next) => {
-    Item.find()
+    let query = {}
+    const { name, activeOffer } = req.query
+    if (name) {
+        query = { ...query, name_lower: { $regex: ".*" + name.toLowerCase() + ".*" } }
+    }
+    if (activeOffer) {
+        query = { ...query, offer: { $exists: true } }
+    }
+
+    Item.find(query)
+        // .exists("offer")
         .then((result) => {
             return res.json(result)
         })
@@ -32,7 +42,7 @@ router.delete("/:itemId", (req, res, next) => {
 //*create item
 router.post("/", (req, res, next) => {
     const itemBody = req.body
-    const item = new Item({ ...itemBody, creationUser: req.user.user_id })
+    const item = new Item({ ...itemBody, creationUser: req.user._id })
     item.save()
         .then((resItem) => {
             console.log("SAVED!", resItem)
