@@ -1,22 +1,46 @@
-import { Router } from "express"
+import e, { Router } from "express"
 import Item from "../models/Item"
 
 //* Path in main is /items
 const router = Router()
 
-//*get all Items or by SearchParam
+const SORT_KEYS = ["asc", "desc"]
+
+//*get Items by SearchParams
 router.get("/", (req, res, next) => {
-    let query = {}
-    const { name, activeOffer } = req.query
-    if (name) {
-        query = { ...query, name_lower: { $regex: ".*" + name.toLowerCase() + ".*" } }
-    }
-    if (activeOffer) {
-        query = { ...query, offer: { $exists: true } }
-    }
+    const queryParams = req.query
+
+    //deconstruct queryparams to dynamically create MongoDB Query with regex
+    const crazyQueryObj = Object.keys(queryParams)
+        .filter((key) => !SORT_KEYS.includes(key))
+        .reduce((acc, key) => {
+            let queryEl
+            if (Array.isArray(queryParams[key])) {
+                queryEl = queryParams[key].map((el) => ({ [key]: { $regex: el } }))
+            } else {
+                queryEl = [{ [key]: { $regex: queryParams[key] } }]
+            }
+            return [...acc, ...queryEl]
+        }, [])
+    const query = crazyQueryObj.length > 0 ? { $or: crazyQueryObj } : null
+
+    //deconstruct queryparams to build MongoDB Sort Obj dynamically
+    let sortObj = {}
+    SORT_KEYS.forEach((sortKey) => {
+        if (queryParams.hasOwnProperty(sortKey)) {
+            if (Array.isArray(queryParams[sortKey])) {
+                sortObj = { ...sortObj, ...queryParams[sortKey].reduce((acc, el) => ({ ...acc, [el]: sortKey }), {}) }
+            } else {
+                sortObj = { ...sortObj, [queryParams[sortKey]]: sortKey }
+            }
+        }
+    })
+
+    console.log("QUERY", query)
+    console.log("SORT", sortObj)
 
     Item.find(query)
-        // .exists("offer")
+        .sort(sortObj)
         .then((result) => {
             return res.json(result)
         })
@@ -50,10 +74,12 @@ router.post("/", (req, res, next) => {
         })
         .catch(next)
 })
+
 //*update item
 router.patch("/:itemId", (req, res, next) => {
-    Item.updateOne({ _id: req.params.itemId }, { $set: req.body }) //holy shit
-        .then((result) => res.json(result))
+    const { name, description, picList, offer } = req.body
+    Item.updateOne({ _id: req.params.itemId }, { $set: { name, description, picList, offer } })
+        .then((result) => res.status(201).send(result))
         .catch(next)
 })
 

@@ -48,6 +48,16 @@ router.post("/login", (req, res, next) => {
         .catch(next)
 })
 
+//removes cookie/token
+router.post("/logout", (req, res, next) => {
+    const options = {
+        path: "/",
+        expires: new Date(1996, 0),
+    }
+    res.cookie("x-access-token", "", options)
+    return res.status(200).send()
+})
+
 //This will check if a cookie is provided and tell the JS application that the cookie is valid and the user is login in "automatically"
 router.use("/checkLogin", checkToken)
 router.post("/checkLogin", (req, res, next) => {
