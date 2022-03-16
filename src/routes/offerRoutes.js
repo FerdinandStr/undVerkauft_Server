@@ -3,35 +3,38 @@ import Item from "../models/Item"
 import { Offer } from "../models/Offer"
 const router = Router()
 
-// create bid for offer (keep item unchanged!)
+// create bid for offer (keep item unchanged?)
 router.post("/:itemId/offer/bid", (req, res, next) => {
-    Item.findById(req.params.itemId)
+    const userId = req.user._id
+    const { itemId } = req.params
+    const { bid } = req.body
+
+    Item.findById(itemId)
         .then((item) => {
-            console.log("Item", item.offer)
-            const userId = req.userId
-            const bid = req.body.bid
-            const lastBid = item.offer.bidList[item.offer.bidList.length - 1]
-            if (lastBid && lastBid.bid < bid) {
+            if (item.creationUser == userId) {
+                // throw new Error("Sie können nicht auf Ihren eigenen Artikel bieten!")
+            }
+            console.log(item.creationUser, userId)
+
+            console.log("Push bid for Item:", item)
+
+            const lastBidFromList = item.offer.bidList[item.offer.bidList.length - 1] ? item.offer.bidList[item.offer.bidList.length - 1].bid : false
+            const lastBid = lastBidFromList || item.offer.askPrice || 0
+
+            if (lastBid < bid) {
                 item.offer.bidList.push({ userId, bid, date: new Date() })
             } else {
-                //TODO error
-                console.log("ERROR", lastBid, bid)
+                console.log("ERROR", lastBid, bid, lastBid < bid)
+                throw new Error("Das Gebot muss höher sein als das letzte Gebot und höher als der Startpreis")
             }
-            console.log("Item", item.offer)
 
             item.save(item)
                 .then(() => {
                     return res.send(item)
                 })
                 .catch(next)
-
-            // return item.offer ? res.json(item.offer) : res.status(404).send("For this item exists no offer.")
         })
         .catch(next)
-
-    // Item.updateOne({ _id: req.params.itemId }, { $set: { offer: { bidList: [req.body] } } }) //holy shit
-    //     .then((result) => res.json(result))
-    //     .catch(next)
 })
 
 //* get offer for Item ID

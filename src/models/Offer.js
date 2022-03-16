@@ -10,7 +10,7 @@ const OfferSchema = new mongoose.Schema(
         askPrice: { type: Number, default: 1, required: true },
         soldPrice: Number,
         soldUser: { type: mongoose.Schema.ObjectId, ref: User }, //index: true
-        bidList: { type: [{ userId: Number, bid: Number, date: Date }] },
+        bidList: { type: [{ userId: mongoose.Schema.ObjectId, bid: Number, date: Date }] },
     },
     { timestamps: true }
 )
