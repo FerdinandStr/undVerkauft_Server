@@ -6,7 +6,7 @@ function checkToken(req, res, next) {
     const token = req.cookies["x-access-token"]
 
     if (!token) {
-        return res.status(401).send({ error: "A token is required for authentication" })
+        return res.status(401).send({ error: "Sie sind nicht angemeldet (Token missing)" })
     }
 
     try {
@@ -14,7 +14,7 @@ function checkToken(req, res, next) {
         req.user = decoded
         return next()
     } catch (err) {
-        return res.status(401).send({ error: "Invalid Token" })
+        return res.status(401).send({ error: "Sie sind nicht angemeldet (Invalid Token)" })
     }
 }
 

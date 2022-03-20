@@ -13,6 +13,8 @@ import { checkToken } from "./middleware/auth"
 
 const { port, DATABASE_URL } = process.env
 
+console.log("DATABASE", DATABASE_URL)
+
 const server = express()
 //Middlewares
 server.use(cors({ allowedHeaders: "Content-Type", credentials: true, origin: true }))
