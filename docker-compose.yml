@@ -6,6 +6,8 @@ services:
             - "3000:3000"
         env_file:
             - .env
+        environment:
+            DATABASE_URL: "mongodb://mongodb_uv:27017/undverkauft_db"
         volumes:
             - type: bind
               source: ./public
@@ -20,3 +22,10 @@ services:
             - .env_mongodb
         ports:
             - 27017:27017
+        volumes:
+            - type: volume
+              source: mongo-data
+              target: /data/db
+
+volumes:
+    mongo-data:

@@ -1,10 +1,11 @@
-import e, { Router } from "express"
+import { Router } from "express"
 import Item from "../models/Item"
 
 //* Path in main is /items
 const router = Router()
 
 const SORT_KEYS = ["asc", "desc"]
+const SPECIAL_KEYS = ["offerActive"]
 
 //*get Items by SearchParams
 router.get("/", (req, res, next) => {
@@ -12,17 +13,18 @@ router.get("/", (req, res, next) => {
 
     //deconstruct queryparams to dynamically create MongoDB Query with regex
     const crazyQueryObj = Object.keys(queryParams)
-        .filter((key) => !SORT_KEYS.includes(key))
+        .filter((key) => !SORT_KEYS.includes(key) && !SPECIAL_KEYS.includes(key))
         .reduce((acc, key) => {
             let queryEl
             if (Array.isArray(queryParams[key])) {
                 queryEl = queryParams[key].map((el) => ({ [key]: { $regex: el } }))
             } else {
                 queryEl = [{ [key]: { $regex: queryParams[key] } }]
+                // queryEl = [{ [key]: queryParams[key] }]
             }
             return [...acc, ...queryEl]
         }, [])
-    const query = crazyQueryObj.length > 0 ? { $or: crazyQueryObj } : null
+    let query = crazyQueryObj.length > 0 ? { $or: crazyQueryObj } : null
 
     //deconstruct queryparams to build MongoDB Sort Obj dynamically
     let sortObj = {}
@@ -35,6 +37,14 @@ router.get("/", (req, res, next) => {
             }
         }
     })
+
+    //add special querys... this will add any custom mongoDB query send by the frontend to the select! (at the moment only built for offerActive; needs refactor)
+    if (Object.keys(queryParams).includes("offerActive")) {
+        try {
+            console.log("CustomDateQuery!", JSON.parse(decodeURIComponent(queryParams["offerActive"])))
+            query = { ...query, "offer.endDate": JSON.parse(decodeURIComponent(queryParams["offerActive"])) }
+        } catch (e) {}
+    }
 
     console.log("QUERY", query)
     console.log("SORT", sortObj)
@@ -66,6 +76,7 @@ router.delete("/:itemId", (req, res, next) => {
 //*create item
 router.post("/", (req, res, next) => {
     const itemBody = req.body
+
     const item = new Item({ ...itemBody, creationUser: req.user._id })
     item.save()
         .then((resItem) => {
