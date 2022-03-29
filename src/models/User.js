@@ -20,6 +20,7 @@ const UserSchema = new mongoose.Schema(
             type: String,
             required: [true, "Enter a password."],
             minlength: [8, "Password should be at least 8 characters"],
+            select: false,
         },
         passwordConfirm: {
             type: String,
@@ -46,7 +47,7 @@ UserSchema.pre("save", async function (next) {
 
 //find by username or email
 UserSchema.statics.findByLogin = async function (login) {
-    let user = await this.findOne({ $or: [{ username: login }, { email: login }] })
+    let user = await this.findOne({ $or: [{ username: login }, { email: login }] }).select("+password")
     return user
 }
 

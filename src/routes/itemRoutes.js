@@ -1,5 +1,6 @@
 import { Router } from "express"
 import Item from "../models/Item"
+import { Offer } from "../models/Offer"
 
 //* Path in main is /items
 const router = Router()
@@ -10,20 +11,33 @@ const SPECIAL_KEYS = ["offerActive"]
 //*get Items by SearchParams
 router.get("/", (req, res, next) => {
     const queryParams = req.query
+    console.log(queryParams)
 
     //deconstruct queryparams to dynamically create MongoDB Query with regex
     const crazyQueryObj = Object.keys(queryParams)
         .filter((key) => !SORT_KEYS.includes(key) && !SPECIAL_KEYS.includes(key))
         .reduce((acc, key) => {
-            let queryEl
-            if (Array.isArray(queryParams[key])) {
-                queryEl = queryParams[key].map((el) => ({ [key]: { $regex: el } }))
+            let queryValue = queryParams[key]
+
+            //check if multiple elements are on this key
+            if (Array.isArray(queryValue)) {
+                //add with regex if searchfield input
+                if (key === "name_lower") {
+                    queryValue = queryValue.map((el) => ({ [key]: { $regex: el } }))
+                } else {
+                    queryValue = queryValue.map((el) => ({ [key]: el }))
+                }
             } else {
-                queryEl = [{ [key]: { $regex: queryParams[key] } }]
-                // queryEl = [{ [key]: queryParams[key] }]
+                //add with regex if searchfield input
+                if (key === "name_lower") {
+                    queryValue = [{ [key]: { $regex: queryValue } }]
+                } else {
+                    queryValue = [{ [key]: queryValue }]
+                }
             }
-            return [...acc, ...queryEl]
+            return [...acc, ...queryValue]
         }, [])
+
     let query = crazyQueryObj.length > 0 ? { $or: crazyQueryObj } : null
 
     //deconstruct queryparams to build MongoDB Sort Obj dynamically
@@ -51,6 +65,7 @@ router.get("/", (req, res, next) => {
 
     Item.find(query)
         .sort(sortObj)
+        .populate("offer.bidList.userId")
         .then((result) => {
             return res.json(result)
         })
@@ -60,6 +75,7 @@ router.get("/", (req, res, next) => {
 //*get Item by ID
 router.get("/:itemId", (req, res, next) => {
     Item.findById(req.params.itemId)
+        .populate("offer.bidList.userId")
         .then((result) => {
             return res.json(result)
         })
@@ -76,6 +92,12 @@ router.delete("/:itemId", (req, res, next) => {
 //*create item
 router.post("/", (req, res, next) => {
     const itemBody = req.body
+    const { offer } = itemBody
+
+    //Test if one of the dates is missing (both dates missing is allowed!)
+    if ((offer.startDate && !offer.endDate) || (!offer.startDate && offer.endDate)) {
+        next(new Error("Start- und Enddatum benötigt"))
+    }
 
     const item = new Item({ ...itemBody, creationUser: req.user._id })
     item.save()
@@ -87,11 +109,28 @@ router.post("/", (req, res, next) => {
 })
 
 //*update item
-router.patch("/:itemId", (req, res, next) => {
+router.patch("/:itemId", async (req, res, next) => {
+    const { itemId } = req.params
     const { name, description, picList, offer } = req.body
-    Item.updateOne({ _id: req.params.itemId }, { $set: { name, description, picList, offer } })
-        .then((result) => res.status(201).send(result))
-        .catch(next)
+
+    //Test if one of the dates is missing (both dates missing is allowed!)
+    if ((offer.startDate && !offer.endDate) || (!offer.startDate && offer.endDate)) {
+        next(new Error("Start- und Enddatum benötigt"))
+    }
+
+    try {
+        //Check if Offer has already started => abort update
+        const oldItem = await Item.findById(itemId)
+        if (oldItem.offer.startDate && oldItem.offer.startDate < new Date()) {
+            next(new Error("Die Auktion läuft bereits und der Artikel kann nicht mehr geändert werden!"))
+        }
+
+        Item.updateOne({ _id: itemId }, { $set: { name, description, picList, offer } })
+            .then((result) => res.status(201).send(result))
+            .catch(next)
+    } catch (e) {
+        next(e)
+    }
 })
 
 export default router

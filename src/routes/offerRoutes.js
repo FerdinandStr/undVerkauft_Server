@@ -3,7 +3,7 @@ import Item from "../models/Item"
 import { Offer } from "../models/Offer"
 const router = Router()
 
-// create bid for offer (keep item unchanged?)
+//* create bid for offer
 router.post("/:itemId/offer/bid", (req, res, next) => {
     const userId = req.user._id
     const { itemId } = req.params
@@ -11,18 +11,24 @@ router.post("/:itemId/offer/bid", (req, res, next) => {
 
     Item.findById(itemId)
         .then((item) => {
+            const { offer } = item
+
             if (item.creationUser == userId) {
-                // throw new Error("Sie können nicht auf Ihren eigenen Artikel bieten!")
+                // TODO throw new Error("Sie können nicht auf Ihren eigenen Artikel bieten!")
             }
-            console.log(item.creationUser, userId)
+            if (!offer.startDate || offer.startDate > new Date()) {
+                throw new Error("Die Auktion hat noch nicht begonnen! (Prüfen Sie Start- und Enddatum)")
+            }
+            if (offer.endDate < new Date()) {
+                throw new Error("Die Auktion ist bereits abgelaufen!")
+            }
 
             console.log("Push bid for Item:", item)
-
-            const lastBidFromList = item.offer.bidList[item.offer.bidList.length - 1] ? item.offer.bidList[item.offer.bidList.length - 1].bid : false
-            const lastBid = lastBidFromList || item.offer.askPrice || 0
+            const lastBidFromList = offer.bidList[offer.bidList.length - 1] ? offer.bidList[offer.bidList.length - 1].bid : false
+            const lastBid = lastBidFromList || offer.askPrice || 0
 
             if (lastBid < bid) {
-                item.offer.bidList.push({ userId, bid, date: new Date() })
+                offer.bidList.push({ userId, bid, date: new Date() })
             } else {
                 console.log("ERROR", lastBid, bid, lastBid < bid)
                 throw new Error("Das Gebot muss höher sein als das letzte Gebot und höher als der Startpreis")
