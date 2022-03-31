@@ -14,7 +14,7 @@ router.post("/:itemId/offer/bid", (req, res, next) => {
             const { offer } = item
 
             if (item.creationUser == userId) {
-                // TODO throw new Error("Sie können nicht auf Ihren eigenen Artikel bieten!")
+                throw new Error("Sie können nicht auf Ihren eigenen Artikel bieten!")
             }
             if (!offer.startDate || offer.startDate > new Date()) {
                 throw new Error("Die Auktion hat noch nicht begonnen! (Prüfen Sie Start- und Enddatum)")
