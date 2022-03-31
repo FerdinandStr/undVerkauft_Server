@@ -13,7 +13,7 @@ import { checkToken } from "./middleware/auth"
 
 const { port, DATABASE_URL } = process.env
 
-console.log("DATABASE", DATABASE_URL)
+console.log("DATABASE URL", DATABASE_URL)
 
 const server = express()
 //Middlewares
@@ -35,29 +35,9 @@ dbConnection()
         console.log("Database connected on", DATABASE_URL)
 
         server.listen(port, () => {
-            console.log("test server listening on ", port)
+            console.log("undVerkauft Backend listening on", "http://localhost:" + port)
         })
-        // if (eraseDatabaseOnSync) {
-        //     return Promise.all([models.User.deleteMany({}), models.Message.deleteMany({})])
-        // }
-        // createUsersWithMessages()
-
-        // server.listen(port, () => {
-        //     console.log("test server listening on ", port, "connected with db", DATABASE_URL)
-        // })
     })
     .catch((res) => {
         console.error("ERROR", res)
     })
-
-// const createUsersWithMessages = async () => {
-//     const user1 = new models.User({
-//         username: "edvstraf",
-//     })
-//     const message1 = new models.Message({
-//         text: "Mei erste Message",
-//         user: user1.id,
-//     })
-//     await user1.save()
-//     await message1.save()
-// }
